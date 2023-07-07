@@ -118,11 +118,13 @@ int main()
     /////////////////////////////////////////////////////////////////
 
     // vertices
-    float vertices[] = {
+    float vertices1[] = {
         // tirnagle 1
         0.5f,   0.5f,  0.0f, // top right
         0.5f,   -0.5f,  0.0f, // bottom right
-        -0.5f,  -0.5f,  0.0f, // bottom left
+        -0.5f,  -0.5f,  0.0f // bottom left
+    };
+    float vertices2[] = {
         // triangle 2
         -0.5f,  -0.5f,  0.0f, // bottom left
         -0.5f,  0.5f,   0.0f, // top left
@@ -130,17 +132,24 @@ int main()
     };
 
     // generate vertex array object for triangle/rectangle
-    unsigned int VAO;
-    glGenVertexArrays(1, &VAO);
-    glBindVertexArray(VAO);
+    unsigned int VAO1, VAO2;
+    glGenVertexArrays(1, &VAO1);
+    glGenVertexArrays(1, &VAO2);
 
     // generate vertex buffer
-    unsigned int VBO;
-    glGenBuffers(1, &VBO);
-    glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+    glBindVertexArray(VAO1);
+    unsigned int VBO1;
+    glGenBuffers(1, &VBO1);
+    glBindBuffer(GL_ARRAY_BUFFER, VBO1);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices1), vertices1, GL_STATIC_DRAW);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(0);
 
-    // specify how to read the vertices / vertex attrib config
+    glBindVertexArray(VAO2);
+    unsigned int VBO2;
+    glGenBuffers(1, &VBO2);
+    glBindBuffer(GL_ARRAY_BUFFER, VBO2);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices2), vertices2, GL_STATIC_DRAW);
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);
 
@@ -161,9 +170,10 @@ int main()
 
         // draw triangle
         glUseProgram(shaderProgram);
-        glBindVertexArray(VAO);
+        glBindVertexArray(VAO1);
         glDrawArrays(GL_TRIANGLES, 0, 3);
-        glDrawArrays(GL_TRIANGLES, 3, 6);
+        glBindVertexArray(VAO2);
+        glDrawArrays(GL_TRIANGLES, 0, 3);
         glBindVertexArray(0);
 
         glfwSwapBuffers(window); // prevent flickering
