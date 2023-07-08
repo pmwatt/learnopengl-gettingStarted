@@ -80,9 +80,10 @@ int main()
     // fragment/pixel shader source
     const char* fragmentShaderSource = "#version 330 core\n"
         "out vec4 FragColor;\n"
+        "uniform vec4 ourColor;\n"
         "void main()\n"
         "{\n"
-        "FragColor = vec4(1.0f, 0.5f, 0.2f, 1.0f);\n"
+        "FragColor = ourColor;\n"
         "}\0"; // null terminated
 
     // create and bind fragment shader
@@ -112,8 +113,9 @@ int main()
             infoLog << std::endl;
     }
 
-    // activate the program with shaders
-    glUseProgram(shaderProgram);
+    // delete shaders, no longer used
+    glDeleteShader(vertexShader);
+    glDeleteShader(fragmentShader);
 
     /////////////////////////////////////////////////////////////////
 
@@ -151,6 +153,13 @@ int main()
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
 
+        // update uniform colour
+        float timeValue = glfwGetTime();
+        float greenValue = (sin(timeValue) / 2.0f) + 0.5f;
+        int vertexColorLocation = glGetUniformLocation(shaderProgram, "ourColor"); // get uniform id
+        glUseProgram(shaderProgram);
+        glUniform4f(vertexColorLocation, 0.0f, greenValue, 0.0f, 1.0f); // set uniform
+
         // draw triangle
         glUseProgram(shaderProgram);
         glBindVertexArray(VAO);
@@ -159,10 +168,6 @@ int main()
         glfwSwapBuffers(window); // prevent flickering
         glfwPollEvents(); // check for event
     }
-
-    // delete shaders, no longer used
-    glDeleteShader(vertexShader);
-    glDeleteShader(fragmentShader);
 
     // clean/delete GLFW's allocated resources
     glfwTerminate();
