@@ -82,7 +82,15 @@ int main()
         "out vec4 FragColor;\n"
         "void main()\n"
         "{\n"
-        "FragColor = vec4(1.0f, 0.5f, 0.2f, 1.0f);\n"
+        "FragColor = vec4(1.0f, 0.5f, 0.2f, 1.0f);\n" // orange
+        "}\0"; // null terminated
+
+    // fragment/pixel shader source
+    const char* fragmentShaderSource2 = "#version 330 core\n"
+        "out vec4 FragColor;\n"
+        "void main()\n"
+        "{\n"
+        "FragColor = vec4(1.0f, 1.0f, 0.0f, 1.0f);\n" // yellow
         "}\0"; // null terminated
 
     // create and bind fragment shader
@@ -91,29 +99,40 @@ int main()
     glShaderSource(fragmentShader, 1, &fragmentShaderSource, NULL);
     glCompileShader(fragmentShader);
 
+    // create and bind the 2nd fragment shader
+    unsigned int fragmentShader2;
+    fragmentShader2 = glCreateShader(GL_FRAGMENT_SHADER);
+    glShaderSource(fragmentShader2, 1, &fragmentShaderSource2, NULL);
+    glCompileShader(fragmentShader2);
+
     // check for shader compilation
     checkShader(GL_VERTEX_SHADER, vertexShader);
     checkShader(GL_FRAGMENT_SHADER, fragmentShader);
 
     // link to shader program
-    unsigned int shaderProgram;
-    shaderProgram = glCreateProgram();
-    glAttachShader(shaderProgram, vertexShader);
-    glAttachShader(shaderProgram, fragmentShader);
-    glLinkProgram(shaderProgram);
+    unsigned int shaderProgram[2];
+    shaderProgram[0] = glCreateProgram();
+    shaderProgram[1] = glCreateProgram();
+
+    glAttachShader(shaderProgram[0], vertexShader); // same vertex shader
+    glAttachShader(shaderProgram[1], vertexShader);
+    glLinkProgram(shaderProgram[0]);
+
+    glAttachShader(shaderProgram[0], fragmentShader); // different pixel shader
+    glAttachShader(shaderProgram[1], fragmentShader2);
+    glLinkProgram(shaderProgram[1]);
 
     // check for shader linking
-    int success;
-    char infoLog[512];
-    glGetProgramiv(shaderProgram, GL_LINK_STATUS, &success);
-    if (!success) {
-        glGetProgramInfoLog(shaderProgram, 512, NULL, infoLog);
-        std::cout << "ERROR::SHADER::LINKING_FAILED\n" <<
-            infoLog << std::endl;
+    for (int i = 0; i < 2; ++i) {
+        int success;
+        char infoLog[512];
+        glGetProgramiv(shaderProgram[i], GL_LINK_STATUS, &success);
+        if (!success) {
+            glGetProgramInfoLog(shaderProgram[i], 512, NULL, infoLog);
+            std::cout << "ERROR::SHADER::" << i << "::LINKING_FAILED\n" <<
+                infoLog << std::endl;
+        }
     }
-
-    // activate the program with shaders
-    glUseProgram(shaderProgram);
 
     /////////////////////////////////////////////////////////////////
 
@@ -156,7 +175,7 @@ int main()
     /////////////////////////////////////////////////////////////
 
     // comment to enable/disable wireframe mode
-    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
     // keep drawing images until explicitly told to stop
     // render loop (just an example)
@@ -169,11 +188,14 @@ int main()
         glClear(GL_COLOR_BUFFER_BIT);
 
         // draw triangle
-        glUseProgram(shaderProgram);
+        glUseProgram(shaderProgram[0]); // orange
         glBindVertexArray(VAO1);
         glDrawArrays(GL_TRIANGLES, 0, 3);
+
+        glUseProgram(shaderProgram[1]); // yellow
         glBindVertexArray(VAO2);
         glDrawArrays(GL_TRIANGLES, 0, 3);
+
         glBindVertexArray(0);
 
         glfwSwapBuffers(window); // prevent flickering
