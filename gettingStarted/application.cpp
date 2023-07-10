@@ -86,6 +86,7 @@ int main()
 
     // keep drawing images until explicitly told to stop
     // render loop (just an example)
+    float offset = 0.0f;
     while (!glfwWindowShouldClose(window))
     {
         processInput(window);
@@ -98,6 +99,8 @@ int main()
         //float timeValue = glfwGetTime();
         //float greenValue = (sin(timeValue) / 2.0f) + 0.5f;
 
+        shaderProgram.setFloat("offset", offset);
+        offset += 0.00001f;
         shaderProgram.use();
 
         glBindVertexArray(VAO);

@@ -6,8 +6,10 @@ layout (location = 1) in vec3 aColor; // attrib position 2
 
 out vec3 ourColor;
 
+uniform float offset;
+
 void main()
 {
-	gl_Position = vec4(-aPos.x, -aPos.y, aPos.z, 1.0); // output
+	gl_Position = vec4(aPos.x + offset, aPos.y, aPos.z, 1.0); // output
 	ourColor = aColor; // set ourColor to input color from the vertex data
 }
