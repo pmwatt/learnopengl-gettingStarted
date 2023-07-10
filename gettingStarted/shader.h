@@ -18,7 +18,7 @@ public:
 	Shader(const char* vertexPath, const char* fragmentPath);
 
 	// use/activate the shader
-	void use();
+	void use() const;
 
 	// utility uniform functions
 	void setBool(const std::string &name, bool value) const;
@@ -90,7 +90,7 @@ Shader::Shader(const char* vertexPath, const char* fragmentPath)
 	};
 
 	// create shader program ////////////////////////////////
-	ID = glCreateProgram();
+	this->ID = glCreateProgram();
 	glAttachShader(ID, vertex);
 	glAttachShader(ID, fragment);
 	glLinkProgram(ID);
@@ -107,7 +107,7 @@ Shader::Shader(const char* vertexPath, const char* fragmentPath)
 	glDeleteShader(fragment);
 }
 
-void Shader::use() {
+void Shader::use() const {
 	glUseProgram(this->ID);
 }
 
