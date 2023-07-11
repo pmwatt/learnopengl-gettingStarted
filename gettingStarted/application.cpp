@@ -1,5 +1,7 @@
 // based on learnopengl.com tutorial
 
+#include "shader.h"
+
 #include <glad/glad.h> 
 #include <GLFW/glfw3.h>
 #include <iostream>
@@ -13,23 +15,9 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 // escape key -> close
 void processInput(GLFWwindow* window);
 
-// check whether shader was successfully compiled
-void checkShader(GLenum shaderType, unsigned int id) {
-    int success;
-    char infoLog[512];
-    glGetShaderiv(id, GL_COMPILE_STATUS, &success);
-    if (!success)
-    {
-        glGetShaderInfoLog(id, 512, NULL, infoLog);
-        std::cout << "ERROR::SHADER::" << shaderType << "::COMPILATION_FAILED\n" <<
-            infoLog << std::endl;
-        glDeleteShader(id);
-    }
-}
 
 int main()
 {
-
     // version and core profile hinting //////////////////////////////
     glfwInit();
 
@@ -63,103 +51,42 @@ int main()
 
     //////////////////////////////////////////////////////////////////
 
-    // vertex shader source
-    const char* vertexShaderSource = "#version 330 core\n"
-        "layout (location = 0) in vec3 aPos;\n"
-        "void main()\n"
-        "{\n"
-        " gl_Position = vec4(aPos.x, aPos.y, aPos.z, 1.0);\n" // output
-        "}\0"; // null terminated
-
-    // create, bind, compile vertex shader
-    unsigned int vertexShader;
-    vertexShader = glCreateShader(GL_VERTEX_SHADER);
-    glShaderSource(vertexShader, 1, &vertexShaderSource, NULL);
-    glCompileShader(vertexShader);
-
-    // fragment/pixel shader source
-    const char* fragmentShaderSource = "#version 330 core\n"
-        "out vec4 FragColor;\n"
-        "void main()\n"
-        "{\n"
-        "FragColor = vec4(1.0f, 0.5f, 0.2f, 1.0f);\n"
-        "}\0"; // null terminated
-
-    // create and bind fragment shader
-    unsigned int fragmentShader;
-    fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-    glShaderSource(fragmentShader, 1, &fragmentShaderSource, NULL);
-    glCompileShader(fragmentShader);
-
-    // check for shader compilation
-    checkShader(GL_VERTEX_SHADER, vertexShader);
-    checkShader(GL_FRAGMENT_SHADER, fragmentShader);
-
-    // link to shader program
-    unsigned int shaderProgram;
-    shaderProgram = glCreateProgram();
-    glAttachShader(shaderProgram, vertexShader);
-    glAttachShader(shaderProgram, fragmentShader);
-    glLinkProgram(shaderProgram);
-
-    // check for shader linking
-    int success;
-    char infoLog[512];
-    glGetProgramiv(shaderProgram, GL_LINK_STATUS, &success);
-    if (!success) {
-        glGetProgramInfoLog(shaderProgram, 512, NULL, infoLog);
-        std::cout << "ERROR::SHADER::LINKING_FAILED\n" <<
-            infoLog << std::endl;
-    }
-
-    // activate the program with shaders
-    glUseProgram(shaderProgram);
-
-    /////////////////////////////////////////////////////////////////
+    // shader
+    Shader shaderProgram{ ".\\Shaders\\shader.vert", ".\\Shaders\\shader.frag" };
 
     // vertices
-    float vertices1[] = {
-        // tirnagle 1
-        0.5f,   0.5f,  0.0f, // top right
-        0.5f,   -0.5f,  0.0f, // bottom right
-        -0.5f,  -0.5f,  0.0f // bottom left
-    };
-    float vertices2[] = {
-        // triangle 2
-        -0.5f,  -0.5f,  0.0f, // bottom left
-        -0.5f,  0.5f,   0.0f, // top left
-        0.5f,   0.5f,  0.0f // top right
+    float vertices[] = {
+        // positions            // colors
+        0.5f, -0.5f, 0.0f,      1.0f, 0.0f, 0.0f, // bottom right
+        -0.5f, -0.5f, 0.0f,     0.0f, 1.0f, 0.0f, // bottom left
+        0.0f, 0.5f, 0.0f,       0.0f, 0.0f, 1.0f // top centre
     };
 
-    // generate vertex array object for triangle/rectangle
-    unsigned int VAO1, VAO2;
-    glGenVertexArrays(1, &VAO1);
-    glGenVertexArrays(1, &VAO2);
+    // generate vertex buffer array and bind (VAO)
+    unsigned int VAO;
+    glGenVertexArrays(1, &VAO);
+    glBindVertexArray(VAO);
 
     // generate vertex buffer
-    glBindVertexArray(VAO1);
-    unsigned int VBO1;
-    glGenBuffers(1, &VBO1);
-    glBindBuffer(GL_ARRAY_BUFFER, VBO1);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices1), vertices1, GL_STATIC_DRAW);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+    unsigned int VBO;
+    glGenBuffers(1, &VBO);
+    glBindBuffer(GL_ARRAY_BUFFER, VBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+
+    // specify how to read the vertices / vertex attrib config
+    // position attribute
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);
 
-    glBindVertexArray(VAO2);
-    unsigned int VBO2;
-    glGenBuffers(1, &VBO2);
-    glBindBuffer(GL_ARRAY_BUFFER, VBO2);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices2), vertices2, GL_STATIC_DRAW);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
-    glEnableVertexAttribArray(0);
+    // color attribute
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float))); // cast to (void*)?
+    glEnableVertexAttribArray(1);
 
     /////////////////////////////////////////////////////////////
 
-    // comment to enable/disable wireframe mode
-    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-
     // keep drawing images until explicitly told to stop
     // render loop (just an example)
+    float offset = 0.0f;
     while (!glfwWindowShouldClose(window))
     {
         processInput(window);
@@ -168,21 +95,20 @@ int main()
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
 
-        // draw triangle
-        glUseProgram(shaderProgram);
-        glBindVertexArray(VAO1);
+        // update uniform colour
+        //float timeValue = glfwGetTime();
+        //float greenValue = (sin(timeValue) / 2.0f) + 0.5f;
+
+        shaderProgram.setFloat("offset", offset);
+        offset += 0.00001f;
+        shaderProgram.use();
+
+        glBindVertexArray(VAO);
         glDrawArrays(GL_TRIANGLES, 0, 3);
-        glBindVertexArray(VAO2);
-        glDrawArrays(GL_TRIANGLES, 0, 3);
-        glBindVertexArray(0);
 
         glfwSwapBuffers(window); // prevent flickering
         glfwPollEvents(); // check for event
     }
-
-    // delete shaders, no longer used
-    glDeleteShader(vertexShader);
-    glDeleteShader(fragmentShader);
 
     // clean/delete GLFW's allocated resources
     glfwTerminate();
