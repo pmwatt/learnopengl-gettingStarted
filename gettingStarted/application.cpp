@@ -128,6 +128,7 @@ int main()
 
     // keep drawing images until explicitly told to stop
     // render loop (just an example)
+    float offset = 0.0f;
     while (!glfwWindowShouldClose(window))
     {
         processInput(window);
