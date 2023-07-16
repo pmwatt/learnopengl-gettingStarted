@@ -67,6 +67,10 @@ int main()
         -0.5f, -0.5f, 0.0f,     0.0f, 0.0f, 1.0f,       0.0f, 0.0f, // bottom left
         -0.5f, 0.5f, 0.0f,      1.0f, 1.0f, 0.0f,       0.0f, 1.0f // top left
     };
+    unsigned int indices[] = {
+        0, 1, 2, // bottom right triangle
+        2, 3, 0 // upper left triangle
+    };
 
     // generate vertex buffer array and bind (VAO)
     unsigned int VAO;
@@ -78,6 +82,12 @@ int main()
     glGenBuffers(1, &VBO);
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+    
+    // generate EBO (for indices)
+    unsigned int EBO;
+    glGenBuffers(1, &EBO);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
 
     // specify how to read the vertices / vertex attrib config
     // position attribute (xyz)
@@ -90,6 +100,7 @@ int main()
 
     // texture attribute (s&t)
     glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
+    glEnableVertexAttribArray(2);
 
     /////////////////////////////////////////////////////////////
 
@@ -114,7 +125,7 @@ int main()
 
     // generate mipmap if successful
     if (data) {
-        glTexImage2D(GL_TEXTURE, 0, GL_RGB, width, height, 0, GL_RGB,
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB,
             GL_UNSIGNED_BYTE, data);
         glGenerateMipmap(GL_TEXTURE_2D);
     }
@@ -126,9 +137,11 @@ int main()
 
     /////////////////////////////////////////////////////////////
 
+    // wireframe mode
+    //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+
     // keep drawing images until explicitly told to stop
     // render loop (just an example)
-    float offset = 0.0f;
     while (!glfwWindowShouldClose(window))
     {
         processInput(window);
@@ -143,6 +156,7 @@ int main()
         glBindTexture(GL_TEXTURE_2D, texture);
         glBindVertexArray(VAO);
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+        glBindVertexArray(0);
 
         glfwSwapBuffers(window); // prevent flickering
         glfwPollEvents(); // check for event
