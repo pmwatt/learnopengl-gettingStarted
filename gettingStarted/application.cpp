@@ -11,8 +11,31 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 
+// error handling - end program
+#define ASSERT(x) if (!(x)) __debugbreak() // for MSVC compiler
+
+// error handling - end program and show line/file
+#define GLCall(x) GLClearError();\
+    x;\
+    ASSERT(GLLogCall(#x, __FILE__, __LINE__)) // # changes to string
+
 constexpr int WIDTH = 800;
 constexpr int HEIGHT = 600;
+
+
+static void GLClearError() {
+    while (glGetError() != GL_NO_ERROR); // 0 or GL_NO_ERROR
+}
+
+static bool GLLogCall(const char* function, const char* file, int line) {
+    bool isError = true;
+    while (GLenum error = glGetError()) {
+        isError = false;
+        std::cout << "[OpenGL Error]" << "(" << error << "): " << function
+            << " " << file << ": " << line << std::endl;
+    }
+    return isError;
+}
 
 // in case of window resize to new width, height
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
@@ -23,12 +46,17 @@ void processInput(GLFWwindow* window);
 
 int main()
 {
+    // flip images loaded by stbi
+    stbi_set_flip_vertically_on_load(true);
+
     // version and core profile hinting //////////////////////////////
     glfwInit();
 
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3); // option, value
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3); // option, value
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+    
+    // for apple
     //glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 
     // create window object
@@ -55,6 +83,78 @@ int main()
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
 
     //////////////////////////////////////////////////////////////////
+
+    // load texture
+    unsigned int texture1, texture2;
+    glGenTextures(1, &texture1);
+    glGenTextures(1, &texture2);
+
+    // set 1st texture unit /////////////////////
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, texture1);
+
+    // set texture wrapping for s & t (as repeat)
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+
+    // set texture filtering for minifying/magnifying
+    // (as linear interpolation)
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    // temporary vars
+    int width, height, nrChannels;
+
+    // load and generate the first texture
+    unsigned char* data1 = stbi_load(".\\Images\\container.jpg", &width, &height,
+        &nrChannels, 0);
+
+    // generate mipmap if successful
+    if (data1) {
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB,
+            GL_UNSIGNED_BYTE, data1);
+        glGenerateMipmap(GL_TEXTURE_2D);
+    }
+    else {
+        std::cout << "Failed to load texture 1\n";
+    }
+
+    // set 2nd texture unit ///////////////////////////
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, texture2);
+
+    // set texture wrapping for s & t (as repeat)
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+
+    // set texture filtering for minifying/magnifying
+    // (as linear interpolation)
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    // temporary vars
+    int width2, height2, nrChannels2;
+
+    // load and generate the second texture
+    unsigned char* data2 = stbi_load(".\\Images\\awesomeface.png", &width2, &height2,
+        &nrChannels2, 0);
+
+    // generate mipmap if successful
+    if (data2) {
+        // https://stackoverflow.com/questions/23150123/loading-png-with-stb-image-for-opengl-texture-gives-wrong-colors
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width2, height2, 0, GL_RGBA,
+            GL_UNSIGNED_BYTE, data2);
+        glGenerateMipmap(GL_TEXTURE_2D);
+    }
+    else {
+        std::cout << "Failed to load texture 2\n";
+    }
+
+    // cleanup textures
+    stbi_image_free(data1);
+    stbi_image_free(data2);
+
+    ////////////////////////////////////////////////////////////////////
 
     // shader
     Shader shaderProgram{ ".\\Shaders\\shader.vert", ".\\Shaders\\shader.frag" };
@@ -102,38 +202,10 @@ int main()
     glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
     glEnableVertexAttribArray(2);
 
-    /////////////////////////////////////////////////////////////
-
-    // load texture
-    unsigned int texture;
-    glGenTextures(1, &texture);
-    glBindTexture(GL_TEXTURE_2D, texture);
-
-    // set texture wrapping for s & t (as repeat)
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-
-    // set texture filtering for minifying/magnifying
-    // (as linear interpolation)
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-    // load and generate the texture
-    int width, height, nrChannels;
-    unsigned char *data = stbi_load(".\\Images\\container.jpg", &width, &height,
-        &nrChannels, 0);
-
-    // generate mipmap if successful
-    if (data) {
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB,
-            GL_UNSIGNED_BYTE, data);
-        glGenerateMipmap(GL_TEXTURE_2D);
-    }
-    else {
-        std::cout << "Failed to load texture\n";
-    }
-    // cleanup texture
-    stbi_image_free(data);
+    shaderProgram.use();
+    //glUniform1i(glGetUniformLocation(shaderProgram.ID, "texture1"), 0); // alternative manual method to set uniform
+    shaderProgram.setInt("texture1", 0);
+    shaderProgram.setInt("texture2", 1);
 
     /////////////////////////////////////////////////////////////
 
@@ -150,12 +222,15 @@ int main()
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
 
-        shaderProgram.use();
+        // 2 texture units
+        GLCall(glActiveTexture(GL_TEXTURE0));
+        GLCall(glBindTexture(GL_TEXTURE_2D, texture1));
+        GLCall(glActiveTexture(GL_TEXTURE1));
+        GLCall(glBindTexture(GL_TEXTURE_2D, texture2));
+        GLCall(glBindVertexArray(VAO));
 
-        // draw texture
-        glBindTexture(GL_TEXTURE_2D, texture);
-        glBindVertexArray(VAO);
-        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+        GLCall(glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0));
+
         glBindVertexArray(0);
 
         glfwSwapBuffers(window); // prevent flickering
@@ -167,8 +242,6 @@ int main()
 
     return 0;
 }
-
-
 
 
 // in case of window resize to new width, height
