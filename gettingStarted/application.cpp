@@ -46,8 +46,6 @@ void processInput(GLFWwindow* window);
 
 int main()
 {
-    // flip images loaded by stbi
-    stbi_set_flip_vertically_on_load(true);
 
     // version and core profile hinting //////////////////////////////
     glfwInit();
@@ -84,7 +82,9 @@ int main()
 
     //////////////////////////////////////////////////////////////////
 
-    // load texture
+    int width, height, nrChannels; // temp vars
+
+    // load textures
     unsigned int texture1, texture2;
     glGenTextures(1, &texture1);
     glGenTextures(1, &texture2);
@@ -102,22 +102,20 @@ int main()
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-    // temporary vars
-    int width, height, nrChannels;
-
     // load and generate the first texture
-    unsigned char* data1 = stbi_load(".\\Images\\container.jpg", &width, &height,
+    unsigned char* data = stbi_load(".\\Images\\container.jpg", &width, &height,
         &nrChannels, 0);
 
     // generate mipmap if successful
-    if (data1) {
+    if (data) {
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB,
-            GL_UNSIGNED_BYTE, data1);
+            GL_UNSIGNED_BYTE, data);
         glGenerateMipmap(GL_TEXTURE_2D);
     }
     else {
         std::cout << "Failed to load texture 1\n";
     }
+    stbi_image_free(data); // so that we can reuse the data variable (probably reset to null?)
 
     // set 2nd texture unit ///////////////////////////
     glActiveTexture(GL_TEXTURE1);
@@ -132,27 +130,24 @@ int main()
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-    // temporary vars
-    int width2, height2, nrChannels2;
-
     // load and generate the second texture
-    unsigned char* data2 = stbi_load(".\\Images\\awesomeface.png", &width2, &height2,
-        &nrChannels2, 0);
+    data = stbi_load(".\\Images\\awesomeface.png", &width, &height,
+        &nrChannels, 0);
 
     // generate mipmap if successful
-    if (data2) {
+    if (data) {
         // https://stackoverflow.com/questions/23150123/loading-png-with-stb-image-for-opengl-texture-gives-wrong-colors
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width2, height2, 0, GL_RGBA,
-            GL_UNSIGNED_BYTE, data2);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGBA,
+            GL_UNSIGNED_BYTE, data);
         glGenerateMipmap(GL_TEXTURE_2D);
     }
     else {
         std::cout << "Failed to load texture 2\n";
     }
+    stbi_image_free(data);
 
-    // cleanup textures
-    stbi_image_free(data1);
-    stbi_image_free(data2);
+    // flip images loaded by stbi
+    stbi_set_flip_vertically_on_load(true);
 
     ////////////////////////////////////////////////////////////////////
 
@@ -223,11 +218,11 @@ int main()
         glClear(GL_COLOR_BUFFER_BIT);
 
         // 2 texture units
-        GLCall(glActiveTexture(GL_TEXTURE0));
-        GLCall(glBindTexture(GL_TEXTURE_2D, texture1));
-        GLCall(glActiveTexture(GL_TEXTURE1));
-        GLCall(glBindTexture(GL_TEXTURE_2D, texture2));
-        GLCall(glBindVertexArray(VAO));
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, texture1);
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, texture2);
+        glBindVertexArray(VAO);
 
         GLCall(glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0));
 
