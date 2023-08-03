@@ -89,6 +89,9 @@ int main()
     glGenTextures(1, &texture1);
     glGenTextures(1, &texture2);
 
+    // flip images loaded by stbi
+    stbi_set_flip_vertically_on_load(true);
+
     // set 1st texture unit /////////////////////
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, texture1);
@@ -145,9 +148,6 @@ int main()
         std::cout << "Failed to load texture 2\n";
     }
     stbi_image_free(data);
-
-    // flip images loaded by stbi
-    stbi_set_flip_vertically_on_load(true);
 
     ////////////////////////////////////////////////////////////////////
 
