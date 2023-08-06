@@ -21,6 +21,8 @@
 
 constexpr int WIDTH = 800;
 constexpr int HEIGHT = 600;
+constexpr float ALPHA_DIFF = 0.001;
+float alpha = 0.5;
 
 
 static void GLClearError() {
@@ -38,10 +40,29 @@ static bool GLLogCall(const char* function, const char* file, int line) {
 }
 
 // in case of window resize to new width, height
-void framebuffer_size_callback(GLFWwindow* window, int width, int height);
+void framebuffer_size_callback(GLFWwindow* window, int width, int height)
+{
+    glViewport(0, 0, width, height);
+}
 
 // escape key -> close
-void processInput(GLFWwindow* window);
+void processInput(GLFWwindow* window, Shader* shader)
+{
+    if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
+        glfwSetWindowShouldClose(window, true);
+    if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS) {
+        if (alpha <= 1.0)
+            alpha += ALPHA_DIFF;
+        shader->setFloat("alpha", alpha);
+        std::cout << "up\n";
+    }
+    if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS) {
+        if (0.0 <= alpha)
+            alpha -= ALPHA_DIFF;
+        shader->setFloat("alpha", alpha);
+        std::cout << "down\n";
+    }
+}
 
 
 int main()
@@ -157,10 +178,10 @@ int main()
     // vertices
     float vertices[] = {
         // positions            // colors               // texture coords
-        0.5f, 0.5f, 0.0f,       1.0f, 0.0f, 0.0f,       0.55f, 0.55f, // top right
-        0.5f, -0.5f, 0.0f,      0.0f, 1.0f, 0.0f,       0.55f, 0.45f, // bottom right
-        -0.5f, -0.5f, 0.0f,     0.0f, 0.0f, 1.0f,       0.45f, 0.45f, // bottom left
-        -0.5f, 0.5f, 0.0f,      1.0f, 1.0f, 0.0f,       0.45f, 0.55f // top left
+        0.5f, 0.5f, 0.0f,       1.0f, 0.0f, 0.0f,       1.0f, 1.0f, // top right
+        0.5f, -0.5f, 0.0f,      0.0f, 1.0f, 0.0f,       1.0f, 0.0f, // bottom right
+        -0.5f, -0.5f, 0.0f,     0.0f, 0.0f, 1.0f,       0.0f, 0.0f, // bottom left
+        -0.5f, 0.5f, 0.0f,      1.0f, 1.0f, 0.0f,       0.0f, 1.0f // top left
     };
     unsigned int indices[] = {
         0, 1, 2, // bottom right triangle
@@ -201,6 +222,7 @@ int main()
     //glUniform1i(glGetUniformLocation(shaderProgram.ID, "texture1"), 0); // alternative manual method to set uniform
     shaderProgram.setInt("texture1", 0);
     shaderProgram.setInt("texture2", 1);
+    shaderProgram.setFloat("alpha", 0.5);
 
     /////////////////////////////////////////////////////////////
 
@@ -211,7 +233,7 @@ int main()
     // render loop (just an example)
     while (!glfwWindowShouldClose(window))
     {
-        processInput(window);
+        processInput(window, &shaderProgram);
 
         // background colour
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
@@ -236,18 +258,4 @@ int main()
     glfwTerminate();
 
     return 0;
-}
-
-
-// in case of window resize to new width, height
-void framebuffer_size_callback(GLFWwindow* window, int width, int height)
-{
-    glViewport(0, 0, width, height);
-}
-
-// escape key -> close
-void processInput(GLFWwindow* window)
-{
-    if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
-        glfwSetWindowShouldClose(window, true);
 }
