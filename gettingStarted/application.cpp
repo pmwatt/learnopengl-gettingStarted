@@ -232,7 +232,7 @@ int main()
     // glm playground
 
     // translate
-    glm::vec4 vec(1.0f, 0.0f, 0.0f, 1.0f);
+    //glm::vec4 vec(1.0f, 0.0f, 0.0f, 1.0f);
     //glm::mat4 trans = glm::mat4(1.0f); // identity mat
     //trans = glm::translate(trans, glm::vec3(1.0f, 1.0f, 0.0f));
     //vec = trans * vec;
@@ -260,7 +260,7 @@ int main()
 
         // trans mat for translating/rotating the rectangle over time
         glm::mat4 trans = glm::mat4(1.0f);
-        trans = glm::translate(trans, glm::vec3(0.5f, 0.5f, 0.0f));
+        trans = glm::translate(trans, glm::vec3(0.5f, -0.5f, 0.0f));
         trans = glm::rotate(trans, (float)glfwGetTime(),
             glm::vec3(0.0f, 0.0f, 1.0f));
 
@@ -275,6 +275,17 @@ int main()
         glActiveTexture(GL_TEXTURE1);
         glBindTexture(GL_TEXTURE_2D, texture2);
         glBindVertexArray(VAO);
+
+        GLCall(glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0));
+
+        // 2nd container
+        glm::mat4 trans2 = glm::mat4(1.0f);
+        trans2 = glm::translate(trans2, glm::vec3(-0.5f, 0.5f, 0.0f));
+        trans2 = glm::scale(trans2, glm::vec3(sin((float)glfwGetTime()), sin((float)glfwGetTime()), 0.0f));
+
+        // pass the trans matrix to the shader
+        unsigned int transformLoc2 = glGetUniformLocation(shaderProgram.ID, "transform");
+        glUniformMatrix4fv(transformLoc, 1, GL_FALSE, glm::value_ptr(trans2));
 
         GLCall(glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0));
 
